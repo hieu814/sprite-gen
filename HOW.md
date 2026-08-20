@@ -1,5 +1,6 @@
 python3 scripts/prepare_sprite_run.py --out-dir ./gen/test --character-id 1 --base-image base2.png --request request.json
 
+python3 scripts/generate_all_sprite_images.py --run-dir ./gen/test --provider gemini
 
 # 0. install dependencies (Pillow, NumPy) into a fresh virtualenv
 python3 -m venv .venv && source .venv/bin/activate
@@ -22,3 +23,21 @@ python3 scripts/serve_curation.py --run-dir <run-dir>
 
 # 5. bake the runtime atlas
 python3 scripts/compose_sprite_atlas.py --run-dir <run-dir>
+
+
+
+
+# 1. prepare — pass --description (prepare re-emits character from CLI, not request.json)
+python3 scripts/prepare_sprite_run.py --out-dir ./gen/test --character-id hero --description "a chibi knight with a round shield and a short sword" --base-image base.png --request request.json --force
+
+# 2. generate all rows with gemini
+python3 scripts/generate_all_sprite_images.py --run-dir ./gen/test --provider gemini
+
+# 3. extract frames
+python3 scripts/extract_sprite_row_frames.py --run-dir ./gen/test
+
+# 4. preview/curate in webview
+python3 scripts/serve_curation.py --run-dir ./gen/test
+
+# 5. bake atlas
+python3 scripts/compose_sprite_atlas.py --run-dir ./gen/test
