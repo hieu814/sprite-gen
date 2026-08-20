@@ -22,7 +22,7 @@
     "rgb": [255, 0, 255],
     "selection": "auto"
   },
-  "style": "match the attached base/anchor reference image EXACTLY: same pixel density, same body proportions, same outline weight, same palette, same shading style, same level of detail.",
+  "style": "REPLICATE the attached base/anchor reference image EXACTLY pixel-for-pixel in identity: identical pixel density, identical body proportions, identical outline weight, identical palette (same colors, same values), identical shading style, identical level of detail, identical face design, identical hair shape, identical outfit, identical props, identical markings, identical silhouette. Treat the reference image as the only allowed character design. Do not reinterpret, restyle, simplify, embellish, or redesign any element. The output must look like the same character asset continued, not a new take on it. If any detail is not visible in the reference, leave it absent rather than inventing it.",
   "motion_phase_guides": true,
   "directions": {
     "set": ["down", "side", "up"],
