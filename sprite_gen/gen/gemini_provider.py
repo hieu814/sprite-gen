@@ -22,7 +22,7 @@ from typing import Any
 from .base import GenRequest, GenTimeoutError, ProviderRun, verify_png
 
 
-DEFAULT_MODEL = "gemini-2.0-flash-exp-image-generation"
+DEFAULT_MODEL = "gemini-3.1-flash-lite-image"
 
 
 def _resolve_api_key() -> str:
@@ -57,8 +57,9 @@ def _load_ref_images(refs: list[Path]) -> list[Any]:
     return images
 
 
+
 class GeminiProvider:
-    """Generate one image through the Google Gemini image-generation API."""
+    """Generate or edit images using Google GenAI SDK."""
 
     name = "gemini"
 
@@ -77,20 +78,52 @@ class GeminiProvider:
         model = request.model or DEFAULT_MODEL
 
         request.raw.parent.mkdir(parents=True, exist_ok=True)
+        started = time.monotonic()
 
-        # Build contents: reference images first (for edit), then the prompt.
+        # Branch 1: Imagen Models (Text-to-Image only)
+        if model.startswith("imagen-"):
+            if request.refs:
+                raise SystemExit(
+                    f"gemini-gen: model '{model}' does not support reference images via generate_images. "
+                    "Use a Gemini multimodal model (e.g., gemini-2.5-flash) for image-to-image."
+                )
+            try:
+                result = client.models.generate_images(
+                    model=model,
+                    prompt=request.prompt,
+                    config=types.GenerateImagesConfig(
+                        number_of_images=1,
+                        output_mime_type="image/png",
+                    ),
+                )
+                image_bytes = result.generated_images[0].image.image_bytes
+                request.raw.write_bytes(image_bytes)
+                verify_png(request.raw)
+
+                return ProviderRun(
+                    provider=self.name,
+                    elapsed_seconds=time.monotonic() - started,
+                    model=model,
+                    session_id=None,
+                    extra={},
+                )
+            except Exception as exc:
+                raise SystemExit(f"gemini-gen: imagen generation failed: {exc}") from exc
+
+        # Branch 2: Gemini Multimodal Models (Image Editing / Text + Image Inputs)
         contents: list[Any] = []
         if request.refs:
             contents.extend(_load_ref_images(request.refs))
-        contents.append(request.prompt)
+        
+        # Explicit instruction encourages the model to emit an image modality
+        prompt_text = f"Generate an image matching this request: {request.prompt}"
+        contents.append(prompt_text)
 
         config = types.GenerateContentConfig(
-            response_modalities=["Text", "Image"],
-            temperature=1.0,
-            max_output_tokens=8192,
+            response_modalities=["TEXT", "IMAGE"],
+            temperature=0.4,  # Lower temperature reduces conversational text drift
         )
 
-        started = time.monotonic()
         try:
             response = client.models.generate_content(
                 model=model,
@@ -99,29 +132,48 @@ class GeminiProvider:
             )
         except Exception as exc:
             raise SystemExit(f"gemini-gen: generation failed: {exc}") from exc
+
         elapsed = time.monotonic() - started
 
         if not response.candidates:
             raise SystemExit("gemini-gen: no candidates in response")
+
         candidate = response.candidates[0]
         if not candidate.content or not candidate.content.parts:
             raise SystemExit("gemini-gen: empty response from Gemini")
 
         image_bytes: bytes | None = None
+        image_mime: str | None = None
         response_texts: list[str] = []
+
         for part in candidate.content.parts:
             if part.inline_data is not None and part.inline_data.data:
                 image_bytes = part.inline_data.data
+                image_mime = part.inline_data.mime_type
             if part.text:
                 response_texts.append(part.text)
 
         if image_bytes is None:
+            printed_text = "\n".join(response_texts) if response_texts else "No text returned."
             raise SystemExit(
-                "gemini-gen: no image data in response "
-                "(Gemini returned text without an image part)"
+                f"gemini-gen: no image data in response from model '{model}'.\n"
+                f"Gemini output standard text instead:\n--- FEEDBACK ---\n{printed_text}"
             )
 
-        request.raw.write_bytes(image_bytes)
+        # Gemini may return JPEG/WebP instead of PNG. Convert to PNG via PIL so
+        # the downstream verify_png magic-byte check always passes.
+        if image_mime and image_mime.lower() != "image/png":
+            try:
+                from PIL import Image as PILImage
+                import io as _io
+                img = PILImage.open(_io.BytesIO(image_bytes))
+                img.save(request.raw, format="PNG")
+            except Exception as exc:
+                raise SystemExit(
+                    f"gemini-gen: failed to convert {image_mime} to PNG: {exc}"
+                ) from exc
+        else:
+            request.raw.write_bytes(image_bytes)
         verify_png(request.raw)
 
         return ProviderRun(
