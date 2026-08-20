@@ -1,0 +1,1 @@
+python3 scripts/prepare_sprite_run.py --out-dir ./test --character-id 1 --base-image base.png --request request.json
