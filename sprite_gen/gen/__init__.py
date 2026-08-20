@@ -2,13 +2,13 @@
 """Unified image generation layer for sprite-gen.
 
 Single source of truth for provider-backed image generation: codex (`image_gen`,
-ChatGPT OAuth), grok (Imagine, xAI OAuth), and openrouter (OpenAI-compatible
-images API, API key). One call = prompt (+ optional refs) -> one verified raw
-PNG, with an optional deterministic transparent chroma post-process. The general
-`image-gen` skill is a thin shuttle over `sprite-gen gen`.
+ChatGPT OAuth), grok (Imagine, xAI OAuth), and gemini (Google Gemini API key).
+One call = prompt (+ optional refs) -> one verified raw PNG, with an optional
+deterministic transparent chroma post-process. The general `image-gen` skill is
+a thin shuttle over `sprite-gen gen`.
 
 CLI:
-    sprite-gen gen --provider codex|grok|openrouter --prompt "..." --out DEST.png
+    sprite-gen gen --provider codex|grok|gemini --prompt "..." --out DEST.png
         [--ref REF.png ...] [--transparent [--chroma-key magenta|green]]
         [--white-check CHECK.png] [--model ID] [--aspect-ratio 1:1]
         [--report REPORT.json] [--keep-session]
@@ -31,10 +31,10 @@ from sprite_gen.spec.runio import atomic_write_text
 from . import chroma as chroma_mod
 from .base import GenRequest, GenResult, verify_png, GenTimeoutError, provider_binary, provider_subprocess_env
 from .codex_provider import CodexProvider
+from .gemini_provider import GeminiProvider
 from .grok_provider import GrokProvider
-from .openrouter_provider import OpenRouterProvider
 
-PROVIDERS = ("codex", "grok", "openrouter")
+PROVIDERS = ("codex", "gemini", "grok")
 
 # Default-provider policy (maintainer 확정 2026-07-17): the default backend is codex
 # (GPT `image_gen`). If codex is unavailable in the environment (CLI missing or
@@ -51,10 +51,10 @@ _CODEX_PROBE_TIMEOUT_SECONDS = 15
 def _make_provider(name: str, *, keep_session: bool):
     if name == "codex":
         return CodexProvider(keep_session=keep_session)
+    if name == "gemini":
+        return GeminiProvider()
     if name == "grok":
         return GrokProvider()
-    if name == "openrouter":
-        return OpenRouterProvider()
     raise SystemExit(f"gen: unknown provider {name!r}; expected one of {', '.join(PROVIDERS)}")
 
 

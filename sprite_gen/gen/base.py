@@ -16,6 +16,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 # Child provider processes are independent execution contexts. They must not

@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "kind": "sprite-gen-request",
+  "engine": "component-row",
+  "character": {
+    "id": "knight",
+    "description": "a chibi knight with a round shield and a short sword",
+    "base_image": "base.png"
+  },
+  "cell": {
+    "shape": "square",
+    "width": 256,
+    "height": 256,
+    "safe_margin_x": 24,
+    "safe_margin_y": 24,
+    "size": 256,
+    "safe_margin": 24
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [255, 0, 255],
+    "selection": "auto"
+  },
+  "style": "match the attached base/anchor reference image EXACTLY: same pixel density, same body proportions, same outline weight, same palette, same shading style, same level of detail.",
+  "motion_phase_guides": true,
+  "directions": {
+    "set": ["down", "side", "up"],
+    "mirror": { "left": "side" },
+    "anchor_suffix": "idle"
+  },
+  "fit": {
+    "pixel_unfake": true,
+    "logical_height": 64,
+    "palette_size": 48,
+    "detail_bias": true,
+    "outline": 0.62,
+    "align_x": "centroid",
+    "align_y": "bottom",
+    "ground_frames": true,
+    "resample": "kcentroid",
+    "segmentation": "projection"
+  },
+  "states": {
+    "down_walk": {
+      "frames": 8,
+      "fps": 10,
+      "loop": true,
+      "action": "walk cycle through body, arm, leg, and hair movement only"
+    },
+    "side_walk": {
+      "frames": 8,
+      "fps": 10,
+      "loop": true,
+      "action": "walk cycle through body, arm, leg, and hair movement only"
+    },
+    "up_walk": {
+      "frames": 8,
+      "fps": 10,
+      "loop": true,
+      "action": "walk cycle through body, arm, leg, and hair movement only"
+    }
+  }
+}
