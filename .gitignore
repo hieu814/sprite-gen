@@ -18,3 +18,4 @@ uv.lock
 .validator-reply-*
 .env*
 env*
+gen*

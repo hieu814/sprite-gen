@@ -1,4 +1,4 @@
-python3 scripts/prepare_sprite_run.py --out-dir ./test --character-id 1 --base-image base.png --request request.json
+python3 scripts/prepare_sprite_run.py --out-dir ./gen/test --character-id 1 --base-image base2.png --request request.json
 
 
 # 0. install dependencies (Pillow, NumPy) into a fresh virtualenv
